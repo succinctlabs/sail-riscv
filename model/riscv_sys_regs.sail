@@ -188,6 +188,9 @@ function haveZbb()  -> bool = true
 function haveZbc()  -> bool = true
 function haveZbs()  -> bool = true
 
+/* Zfa (additional FP) extension */
+function haveZfa()  -> bool = true
+
 /* Zfh (half-precision) extension */
 function haveZfh()  -> bool = true
 
