@@ -60,13 +60,13 @@ my_ignore_test_tuple = []
 
 # Allowed command line options
 opts, args = getopt.getopt (
-    sys.argv[1:], 
-    "dhuo:", 
+    sys.argv[1:],
+    "dhuo:",
     [
     "help",
     "usage",
-    "outfile=", 
-    "test_dir=", 
+    "outfile=",
+    "test_dir=",
     "32bit=",
     "64bit=",
     "c_sim=",
@@ -288,7 +288,7 @@ def print_optional_settings() :
     global test_switch_pyfile
     global test_ignore_pyfile
     global debug
-  
+
     print('================================================================')
     print('Run time variable settings: ')
     print('    {:32}'.format('debug: ')                         + str(debug))
@@ -323,7 +323,7 @@ def green(test_str, ok_fail_str) :
 def yellow(test_str, ok_fail_str) :
     global test_fail
     global SUITE_XML
-    global YELLOW 
+    global YELLOW
     global NC
     test_fail += 1
     print(test_str + ':' + YELLOW + ok_fail_str + NC)
@@ -332,7 +332,7 @@ def yellow(test_str, ok_fail_str) :
 def red(test_str, ok_fail_str) :
     global test_fail
     global SUITE_XML
-    global RED 
+    global RED
     global NC
     test_fail += 1
     print(test_str + ':' + RED + ok_fail_str + NC)
@@ -345,9 +345,9 @@ def finish_suite(suite_name) :
     global all_fail
     global SUITE_XML
     global SUITES_XML
-    
+
     print(suite_name + ': Passed ' + str(test_pass) + ' out of ' + str(test_pass + test_fail) + '\n\n')
-    date_tmp = subprocess.check_output("date", shell=True, text=True) 
+    date_tmp = subprocess.check_output("date", shell=True, text=True)
     date = date_tmp.rstrip()
     SUITES_XML += '  <testsuite name="' + suite_name + '" tests=' + str(test_pass + test_fail ) + '" failures="' + str(test_fail) + '" timestamp="' + date + '">\n' + SUITE_XML + ' </testsuite>\n'
     SUITE_XML=""
@@ -463,7 +463,7 @@ for d in test_dir_list :
 
 debug_print('TESTDIR : ' + TESTDIR)
 
-# DIR points to the invocation directory. 
+# DIR points to the invocation directory.
 DIR = os.getcwd()
 SEARCH_DIR = DIR
 while SEARCH_DIR != '/' :
@@ -502,7 +502,7 @@ else :
     pass
 
 if run_ocamlsim :
-    if run_32bit_tests : 
+    if run_32bit_tests :
         print("Building 32-bit RISCV specification...")
         cmd = "make ARCH=RV32 ocaml_emulator/riscv_ocaml_sim_RV32"
         ret_val = os.system(cmd)
