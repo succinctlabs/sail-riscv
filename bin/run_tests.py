@@ -118,11 +118,12 @@ SUITES_XML  = ""
 #   TRACE()         For bringup debug only.  TRACE() instances should be removed.
 
 def debug_print (text = "") :
-    cf = currentframe()
-    of = cf.f_back
-    fi = getframeinfo(of)
-    filename = os.path.basename(fi.filename)
-    print("debug: file: " + filename + " line: " + str(of.f_lineno) + " : " + text)
+    if debug :
+        cf = currentframe()
+        of = cf.f_back
+        fi = getframeinfo(of)
+        filename = os.path.basename(fi.filename)
+        print("debug: file: " + filename + " line: " + str(of.f_lineno) + " : " + text)
     return
 
 def error_print (text = "") :
@@ -139,7 +140,8 @@ def fatal_print (text = "") :
     fi = getframeinfo(of)
     filename = os.path.basename(fi.filename)
     print("fatal error: file: " + filename + " line: " + str(of.f_lineno) + " : " + text)
-    return
+    sys.exit(1)
+    return  # never taken
 
 def TRACE(text = "") :
     cf = currentframe()
@@ -406,7 +408,7 @@ def is_riscv_elf_64(filename) :
 
 def ignore_test(testname) :
     for t in my_ignore_test_tuple :
-        print("ignore_test function: testname: " + os.path.basename(testname) + " t: " + t)
+        debug_print("ignore testname: " + os.path.basename(testname) + " t: " + t)
         if t == os.path.basename(testname) :
             return True
         else :
@@ -490,7 +492,7 @@ debug_print("DIR + '/' + TESTDIR + '/' + * :" + DIR + '/' + TESTDIR + '/' + "*")
 # Do 'make clean' to avoid cross-arch pollution.
 
 if clean_build :
-    cmd = "make clean"
+    cmd = "make ARCH=RV32 clean"
     ret_val = os.system(cmd)
     if ret_val != 0 :
         fatal_print("non-zero exit value from command: '" + cmd + "'")
@@ -510,9 +512,7 @@ if run_ocamlsim :
             debug_print("non-zero exit value from command: '" + cmd + "'")
             red("Building 32-bit RISCV OCaml emulator","fail")
 
-TRACE("run_32bit_tests and run_ocamlsim : " + str(run_32bit_tests and run_ocamlsim))
 if run_32bit_tests and run_ocamlsim :
-    TRACE()
     for test in glob.glob(DIR + '/' + TESTDIR + '/' + "*") :
         debug_print("test: " + test)
         if not is_riscv_elf_32(test) :
@@ -549,10 +549,10 @@ else :
 finish_suite("32-bit RISCV OCaml-simulator tests")
 
 if clean_build :
-    cmd = "make clean"
+    cmd = "make ARCH=RV32 clean"
     ret_val = os.system(cmd)
     if ret_val != 0 :
-        print("error: non-zero exit value from command: '" + cmd + "'")
+        fatal_print("non-zero exit value from command: '" + cmd + "'")
         sys.exit(1)
     else :
         pass
@@ -568,12 +568,10 @@ if run_csim :
         if ret_val == 0 :
             green("Building 32-bit RISCV C emulator", "ok")
         else :
-            error_print("non-zero exit value from command: '" + cmd + "'")
             red("Building 32-bit RISCV C emulator","fail")
+            error_print("non-zero exit value from command: '" + cmd + "'")
 
-TRACE("run_32bit_tests and run_csim : " + str(run_32bit_tests and run_csim))
 if run_32bit_tests and run_csim :
-    TRACE()
     for test in glob.glob(DIR + '/' + TESTDIR + '/' + "*") :
         if not is_riscv_elf_32(test) :
             continue
@@ -607,7 +605,7 @@ else :
 finish_suite("32-bit RISCV C-simulator tests")
 
 if clean_build :
-    cmd = "make clean"
+    cmd = "make ARCH=RV64 clean"
     ret_val = os.system(cmd)
     if ret_val != 0 :
         fatal_print("non-zero exit value from command: '" + cmd + "'")
@@ -627,9 +625,7 @@ if run_ocamlsim :
             error_print("non-zero exit value from command: '" + cmd + "'")
             red("Building 64-bit RISCV OCaml emulator","fail")
 
-TRACE("run_64bit_tests and run_ocamlsim : " + str(run_64bit_tests and run_ocamlsim))
 if run_64bit_tests and run_ocamlsim :
-    TRACE()
     for test in glob.glob(DIR + '/' + TESTDIR + '/' + "*") :
         debug_print("test: " + test)
         if not is_riscv_elf_64(test) :
@@ -667,7 +663,7 @@ finish_suite("64-bit RISCV OCaml-simulator tests")
 
 
 if clean_build :
-    cmd = "make clean"
+    cmd = "make ARCH=RV64 clean"
     ret_val = os.system(cmd)
     if ret_val != 0 :
         fatal_print("non-zero exit value from command: '" + cmd + "'")
@@ -684,12 +680,10 @@ if run_csim :
         if ret_val == 0 :
             green("Building 64-bit RISCV C emulator", "ok")
         else :
-            print("error: non-zero exit value from command: '" + cmd + "'")
             red("Building 64-bit RISCV C emulator","fail")
+            error_print("non-zero exit value from command: '" + cmd + "'")
 
-TRACE("run_64bit_tests and run_csim : " + str(run_64bit_tests and run_csim))
 if run_64bit_tests and run_csim :
-    TRACE()
     for test in glob.glob(DIR + '/' + TESTDIR + '/' + "*") :
         debug_print("test: " + test)
         if not is_riscv_elf_64(test) :
