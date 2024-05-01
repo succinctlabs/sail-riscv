@@ -29,7 +29,7 @@ jobs:
     - name: Build RISC-V testsuite
       run: |
         cd TEST_DIR_ROOT/riscv_tests.git ; \
-        echo ${PWD} ls ; \
+        echo ${PWD} ; ls ; \
         autoconf ;  \
         ./configure --prefix=${PWD}/target ; \
         make isa ;
