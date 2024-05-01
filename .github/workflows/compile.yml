@@ -24,7 +24,7 @@ jobs:
       run: sudo tar xvfz riscv32-glibc-ubuntu-22.04-gcc-nightly-2024.04.12-nightly.tar.gz --directory /opt
     - name: Download RISC-V toolchain (64-bit)
       run: wget -c https://github.com/riscv-collab/riscv-gnu-toolchain/releases/download/2024.04.12/riscv64-glibc-ubuntu-22.04-gcc-nightly-2024.04.12-nightly.tar.gz
-    - name: Install RISC-V toolchain (32-bit)
+    - name: Install RISC-V toolchain (64-bit)
       run: sudo tar xvfz riscv64-glibc-ubuntu-22.04-gcc-nightly-2024.04.12-nightly.tar.gz --directory /opt
     - name: Build RISC-V testsuite
       run: |
@@ -34,6 +34,7 @@ jobs:
         ./configure --prefix=${PWD}/target ; \
         make -v ; \
         which gmake ; \
+        export PATH=/opt/riscv/bin:${PATH} ; \
         make isa ;
     - name: Build and test simulators
       run: eval $(opam env) && test/run_tests.sh
