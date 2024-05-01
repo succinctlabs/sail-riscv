@@ -31,7 +31,7 @@ jobs:
         cd TEST_DIR_ROOT/ ; \
         git submodule update --init --recursive ; \
         cd riscv_tests.git ; \
-        git checkout riscv-tests-tail ; \
+        git checkout riscv-tests-sail ; \
         autoconf ;  \
         ./configure --prefix=${PWD}/target ; \
         make isa ;
