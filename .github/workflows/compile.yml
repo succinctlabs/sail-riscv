@@ -18,6 +18,10 @@ jobs:
       run: opam init --disable-sandboxing -y
     - name: Install sail
       run: opam install -y sail
+    - name: Download RISC-V toolchain (32-bit)
+      run: wget -c https://github.com/riscv-collab/riscv-gnu-toolchain/releases/download/2024.04.12/riscv32-glibc-ubuntu-22.04-gcc-nightly-2024.04.12-nightly.tar.gz
+    - name: Install RISC-V toolchain (32-bit)
+      run: sudo tar xvfz riscv32-glibc-ubuntu-22.04-gcc-nightly-2024.04.12-nightly.tar.gz --directory /opt
     - name: Build and test simulators
       run: eval $(opam env) && test/run_tests.sh
     - name: Upload test results
