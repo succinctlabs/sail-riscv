@@ -29,9 +29,7 @@ jobs:
     - name: Build RISC-V testsuite
       run: |
         git branch ; \
-        cd TEST_DIR_ROOT/ ; \
-        cd riscv_tests.git ; \
-        git checkout riscv-tests-sail ; \
+        cd TEST_DIR_ROOT/riscv_tests.git ; \
         autoconf ;  \
         ./configure --prefix=${PWD}/target ; \
         make isa ;
