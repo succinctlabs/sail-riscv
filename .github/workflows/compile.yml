@@ -25,6 +25,7 @@ jobs:
         cd riscv_tests ; \
         ls -l ;
         git fetch --all ; \
+        git branch --all ; \
         git checkout -b riscv-tests-sail origin/riscv-tests-sail ; \
         ls -l ;
     - name: Ensure pre-commit checks pass
