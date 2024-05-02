@@ -20,7 +20,7 @@ jobs:
       run : |
         cd TEST_DIR_ROOT/riscv_tests.git ; \
         git fetch ; \
-        git checkout -b riscv-tests-sail ; \
+        git checkout -t riscv-tests-sail ; \
         ls -l ;
     - name: Ensure pre-commit checks pass
       run: pip install pre-commit && pre-commit run --all-files --show-diff-on-failure --color=always
@@ -39,7 +39,6 @@ jobs:
     - name: Build RISC-V testsuite
       run: |
         cd TEST_DIR_ROOT/riscv_tests.git ; \
-        git checkout -b riscv-tests-sail remotes/origin/riscv-tests-sail ; \
         echo ${PWD} ; ls ; \
         autoconf ;  \
         ./configure --prefix=${PWD}/target ; \
