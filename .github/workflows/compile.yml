@@ -23,6 +23,7 @@ jobs:
         cd TEST_DIR_ROOT/ ; \
         ln -s riscv_tests.git riscv_tests; \
         cd riscv_tests ; \
+        git branch --all ; \
         ls -l ;
         git fetch --all ; \
         git branch --all ; \
