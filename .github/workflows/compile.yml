@@ -12,6 +12,11 @@ jobs:
       uses: actions/checkout@HEAD
       with:
         submodules: recursive
+    - name: Update submodule branch
+      run : |
+        git config --file=.gitmodules submodule.TEST_DIR_ROOT/riscv_tests.git.branch riscv-tests-sail ; \
+        git submodule sync ; \
+        git submodule update --init --recursive --remote
     - name: Ensure pre-commit checks pass
       run: pip install pre-commit && pre-commit run --all-files --show-diff-on-failure --color=always
     - name: Init opam
@@ -29,7 +34,7 @@ jobs:
     - name: Build RISC-V testsuite
       run: |
         cd TEST_DIR_ROOT/riscv_tests.git ; \
-        git checkout -b riscv-tests-sail --track remotes/origin/riscv-tests-sail ; \
+        git checkout -b riscv-tests-sail remotes/origin/riscv-tests-sail ; \
         echo ${PWD} ; ls ; \
         autoconf ;  \
         ./configure --prefix=${PWD}/target ; \
