@@ -23,7 +23,9 @@ jobs:
         cd TEST_DIR_ROOT/ ; \
         ln -s riscv_tests.git riscv_tests; \
         cd riscv_tests ; \
-        git checkout -t origin/riscv-tests-sail ; \
+        ls -l ;
+        git fetch --all ; \
+        git checkout -b riscv-tests-sail origin/riscv-tests-sail ; \
         ls -l ;
     - name: Ensure pre-commit checks pass
       run: pip install pre-commit && pre-commit run --all-files --show-diff-on-failure --color=always
