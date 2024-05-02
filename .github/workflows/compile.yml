@@ -13,10 +13,14 @@ jobs:
       with:
         submodules: recursive
     - name: Update submodule branch
+#     run : |
+#       git config --file=.gitmodules submodule.TEST_DIR_ROOT/riscv_tests.git.branch riscv-tests-sail ; \
+#       git submodule sync ; \
+#       git submodule update --init --recursive --remote
       run : |
-        git config --file=.gitmodules submodule.TEST_DIR_ROOT/riscv_tests.git.branch riscv-tests-sail ; \
-        git submodule sync ; \
-        git submodule update --init --recursive --remote
+        cd TES_DIR_ROOT/riscv_tests.git ; \
+        git fetch ; \
+        git checkout riscv-tests-sail ; 
     - name: Ensure pre-commit checks pass
       run: pip install pre-commit && pre-commit run --all-files --show-diff-on-failure --color=always
     - name: Init opam
