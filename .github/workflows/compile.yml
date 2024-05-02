@@ -17,10 +17,10 @@ jobs:
 #       git config --file=.gitmodules submodule.TEST_DIR_ROOT/riscv_tests.git.branch riscv-tests-sail ; \
 #       git submodule sync ; \
 #       git submodule update --init --recursive --remote
-      run : |
-        cd TEST_DIR_ROOT/riscv_tests.git ; \
 #       git clone https://github.com/riscv-software-src/riscv-tests.git riscv-tests ; \
 #        cd riscv-tests ; \
+      run : |
+        cd TEST_DIR_ROOT/riscv_tests.git ; \
         git checkout -t origin/riscv-tests-sail ; \
         ls -l ;
     - name: Ensure pre-commit checks pass
