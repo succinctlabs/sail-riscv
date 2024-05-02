@@ -35,6 +35,7 @@ jobs:
         make -v ; \
         which gmake ; \
         export PATH=/opt/riscv/bin:${PATH} ; \
+        echo "PATH: ${PATH}" ; \
         riscv32-unknown-elf-gcc -march=rv32g_zbb -c -x c /dev/null ; \
         echo "return code: $?" ; \
         make isa ;
