@@ -11,8 +11,8 @@ jobs:
     - name: Check out repository code
       uses: actions/checkout@HEAD
       with:
-#        submodules: recursive
-        submodules: true
+        submodules: recursive
+#        submodules: true
     - name: Update submodule branch
 #     run : |
 #       git config --file=.gitmodules submodule.TEST_DIR_ROOT/riscv_tests.git.branch riscv-tests-sail ; \
@@ -21,6 +21,7 @@ jobs:
 #       git clone https://github.com/riscv-software-src/riscv-tests.git riscv-tests ; \
 #        cd riscv-tests ; \
       run : |
+        git branch ; \
         cd TEST_DIR_ROOT/ ; \
         cd riscv_tests.git ; \
         git branch -r ; \
