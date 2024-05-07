@@ -21,9 +21,11 @@ jobs:
 #       git clone https://github.com/riscv-software-src/riscv-tests.git riscv-tests ; \
 #        cd riscv-tests ; \
       run : |
+        echo $PWD ; \
+        cat .gitmodules ; \
         git branch ; \
-        cd TEST_DIR_ROOT/ ; \
-        cd riscv_tests.git ; \
+        git branch -r ; \
+        cd TEST_DIR_ROOT/riscv_tests.git ; \
         echo $PWD ; \
         ls -l ;
         cat .gitmodules ; \
