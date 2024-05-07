@@ -28,6 +28,7 @@ jobs:
         cd TEST_DIR_ROOT/riscv_tests.git ; \
         echo $PWD ; \
         ls -l ;
+        git remote add origin git@github.com:riscv-software-src/riscv-tests.git ; \
         git branch -r ; \
         git checkout -t origin/riscv-tests-sail ; \
         ls -l ;
