@@ -22,13 +22,10 @@ jobs:
 #        cd riscv-tests ; \
       run : |
         cd TEST_DIR_ROOT/ ; \
-        ln -s riscv_tests.git riscv_tests; \
-        cd riscv_tests ; \
-        git branch --all ; \
+        cd riscv_tests.git ; \
+        git branch -r ; \
         ls -l ;
-        git fetch --all ; \
-        git branch --all ; \
-        git checkout -b riscv-tests-sail --track origin/riscv-tests-sail ; \
+        git checkout riscv-tests-sail -t origin/riscv-tests-sail ; \
         ls -l ;
     - name: Ensure pre-commit checks pass
       run: pip install pre-commit && pre-commit run --all-files --show-diff-on-failure --color=always
