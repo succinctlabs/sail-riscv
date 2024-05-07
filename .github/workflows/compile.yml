@@ -28,7 +28,6 @@ jobs:
         cd TEST_DIR_ROOT/riscv_tests.git ; \
         echo $PWD ; \
         ls -l ;
-        cat .gitmodules ; \
         git branch -r ; \
         git checkout -t origin/riscv-tests-sail ; \
         ls -l ;
