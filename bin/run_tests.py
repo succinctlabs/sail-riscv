@@ -26,8 +26,6 @@
 #                   8. Added support to supply switches to the riscv_sim command
 #                       via the --test_switch_pyfile.
 #
-# TODO:         Need to add timeouts to tests.
-#
 # Author(s):   Bill McSpadden (bill@riscv.org)
 #
 # History:     See revision control log
