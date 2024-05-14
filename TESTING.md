@@ -3,6 +3,22 @@
 This document contains information regarding the testing of the RISC-V
 Sail model.
 
+There are several goals for the testing effort of the RISC-V Sail model.
+First, we need a set of tests that get run during the CI (Continuous Improvement)
+cycle when merging PRs to the main branch.  We will refer to these as Build Verification Tests
+(BVTs). These should cover basic instruction behavior.
+
+Second, we want to take Architectural Compatability Tests (ACTs) and run them
+against the Sail model.  However, many of the ACTs are not self-checking and therefore
+cannot be used directly for validating the functionality of the model.  But we can
+run the Sail model and cross-check with the Spike model using signature checks.
+
+Third,  for all of these test methods,  we want to be able to make coverage measurements
+of the Sail code.  This will give us some objective insights into where we have coverage
+holes in our testing.
+
+
+
 ## Background
 
 For the longest time,  the set of tests used to validate changes to the
@@ -69,3 +85,7 @@ inspect the log file is a neccessary feature that needs to be added.
 which would then mean that the test "passed".  For example,  we might want to check
 that if the vector extension is not enabled, that a test that uses a vector instruction
 would "fail".
+
+1. Random test environment.  We would like to add a directed random test environment
+that allows us to hit unforeseen boundary conditions.  We would like to randomize
+both the instruction sequences as well as the model configuration.
