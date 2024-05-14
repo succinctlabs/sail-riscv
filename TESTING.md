@@ -62,7 +62,7 @@ We have the following defeciencies in the test environment that need to be fixed
 1. A pass/fail can only be detected and reported from within the test itself.
 If a test writer wanted to check the simluator log file to see
 if certain strings existed (say, for example, you want to check the disassembly
-of newly added instructions),  there is no method to do so.  The ability to 
+of newly added instructions),  there is no method to do so.  The ability to
 inspect the log file is a neccessary feature that needs to be added.
 
 1. Negative testing. We need to be able to check for proper detection of errors
