@@ -67,6 +67,11 @@ uint64_t sys_pmp_grain(unit u)
   return rv_pmp_grain;
 }
 
+bool sys_enable_smepmp(unit u)
+{
+  return rv_enable_smepmp;
+}
+
 bool sys_enable_writable_misa(unit u)
 {
   return rv_enable_writable_misa;

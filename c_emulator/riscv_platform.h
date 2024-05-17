@@ -14,6 +14,8 @@ bool sys_enable_vext(unit);
 uint64_t sys_pmp_count(unit);
 uint64_t sys_pmp_grain(unit);
 
+bool sys_enable_smepmp(unit);
+
 bool plat_enable_dirty_update(unit);
 bool plat_enable_misaligned_access(unit);
 bool plat_mtval_has_illegal_inst_bits(unit);

@@ -102,6 +102,10 @@ val sys_pmp_count = {c: "sys_pmp_count", ocaml: "Platform.pmp_count", _: "sys_pm
    G=0 -> 4 bytes, G=10 -> 4096 bytes. */
 val sys_pmp_grain = {c: "sys_pmp_grain", ocaml: "Platform.pmp_grain", _: "sys_pmp_grain"} : unit -> range(0, 63)
 
+/* Enable Smepmp */
+val sys_enable_smepmp = {c: "sys_enable_smepmp", ocaml: "Platform.enable_smepmp", _: "sys_enable_smepmp"} : unit -> bool
+function haveSmepmp() -> bool = sys_enable_smepmp()
+
 /* whether misa.v was enabled at boot */
 val sys_enable_vext = {c: "sys_enable_vext", ocaml: "Platform.enable_vext", _: "sys_enable_vext"} : unit -> bool
 
