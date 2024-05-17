@@ -57,7 +57,6 @@ const char *RV32ISA = "RV32IMAC";
 #define OPT_ENABLE_SMEPMP 1005
 #define OPT_ENABLE_ZCB 10014
 
-
 static bool do_dump_dts = false;
 static bool do_show_times = false;
 struct tv_spike_t *s = NULL;
