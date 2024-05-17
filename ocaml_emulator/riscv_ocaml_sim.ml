@@ -59,6 +59,9 @@ let options = Arg.align ([("-dump-dts",
                           ("-enable-zcb",
                            Arg.Set P.config_enable_zcb,
                            " enable Zcb (simple code size) extension");
+                          ("-enable-smepmp",
+                           Arg.Set P.config_enable_smepmp,
+                           " enable Smepmp extension");
                           ("-enable-writable-fiom",
                            Arg.Set P.config_enable_writable_fiom,
                            " enable FIOM (Fence of I/O implies Memory) bit in menvcfg");
