@@ -1,6 +1,6 @@
 {
   "base": {
-    "xlen": @CONFIG__BASE__XLEN@,
+    "xlen": 64,
     "E": false,
     "writable_misa": true,
     "writable_fiom": true,
@@ -66,8 +66,8 @@
     },
     "V": {
       "supported": true,
-      "vlen_exp": @CONFIG__V__VLEN_EXP@,
-      "elen_exp": @CONFIG__V__ELEN_EXP@,
+      "vlen_exp": 9,
+      "elen_exp": 6,
       "vl_use_ceil": false
     },
     "B": {
@@ -98,10 +98,10 @@
       "supported": true
     },
     "Zihintntl": {
-      "supported": true
+      "supported": false
     },
     "Zihintpause": {
-      "supported": true
+      "supported": false
     },
     "Zihpm": {
       "supported": true
@@ -119,7 +119,7 @@
       "supported": true
     },
     "Zacas": {
-      "supported": true
+      "supported": false
     },
     "Zalrsc": {
       "supported": false
@@ -149,7 +149,7 @@
       "supported": true
     },
     "Zcf": {
-      "supported": @CONFIG_XLEN_IS_32@
+      "supported": false
     },
     "Zcd": {
       "supported": true
@@ -259,16 +259,16 @@
       "sfence_vma_illegal_if_svbare_only": true
     },
     "Sv32": {
-      "supported": @CONFIG_XLEN_IS_32@
+      "supported": false
     },
     "Sv39": {
-      "supported": @CONFIG_XLEN_IS_64@
+      "supported": true
     },
     "Sv48": {
-      "supported": @CONFIG_XLEN_IS_64@
+      "supported": true
     },
     "Sv57": {
-      "supported": @CONFIG_XLEN_IS_64@
+      "supported": true
     }
   }
 }
