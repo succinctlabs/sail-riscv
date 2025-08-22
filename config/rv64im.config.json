@@ -1,10 +1,6 @@
 {
   "base": {
-<<<<<<<< HEAD:config/rv64im.config.json
     "xlen": 64,
-========
-    "xlen": @CONFIG__BASE__XLEN@,
->>>>>>>> master:config/config.json.in
     "E": false,
     "writable_misa": true,
     "writable_fiom": true,
@@ -70,8 +66,8 @@
     },
     "V": {
       "supported": true,
-      "vlen_exp": @CONFIG__V__VLEN_EXP@,
-      "elen_exp": @CONFIG__V__ELEN_EXP@,
+      "vlen_exp": 9,
+      "elen_exp": 6,
       "vl_use_ceil": false
     },
     "B": {
@@ -102,17 +98,10 @@
       "supported": true
     },
     "Zihintntl": {
-<<<<<<<< HEAD:config/rv64im.config.json
       "supported": false
     },
     "Zihintpause": {
       "supported": false
-========
-      "supported": true
-    },
-    "Zihintpause": {
-      "supported": true
->>>>>>>> master:config/config.json.in
     },
     "Zihpm": {
       "supported": true
@@ -130,11 +119,7 @@
       "supported": true
     },
     "Zacas": {
-<<<<<<<< HEAD:config/rv64im.config.json
       "supported": false
-========
-      "supported": true
->>>>>>>> master:config/config.json.in
     },
     "Zalrsc": {
       "supported": false
@@ -164,7 +149,7 @@
       "supported": true
     },
     "Zcf": {
-      "supported": @CONFIG_XLEN_IS_32@
+      "supported": false
     },
     "Zcd": {
       "supported": true
@@ -274,16 +259,16 @@
       "sfence_vma_illegal_if_svbare_only": true
     },
     "Sv32": {
-      "supported": @CONFIG_XLEN_IS_32@
+      "supported": false
     },
     "Sv39": {
-      "supported": @CONFIG_XLEN_IS_64@
+      "supported": true
     },
     "Sv48": {
-      "supported": @CONFIG_XLEN_IS_64@
+      "supported": true
     },
     "Sv57": {
-      "supported": @CONFIG_XLEN_IS_64@
+      "supported": true
     }
   }
 }
