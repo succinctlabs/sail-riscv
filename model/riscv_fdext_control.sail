@@ -24,16 +24,16 @@ mapping clause csr_name_map = 0x001  <-> "fflags"
 mapping clause csr_name_map = 0x002  <-> "frm"
 mapping clause csr_name_map = 0x003  <-> "fcsr"
 
-function clause is_CSR_defined (0x001) = currentlyEnabled(Ext_F) | currentlyEnabled(Ext_Zfinx)
-function clause is_CSR_defined (0x002) = currentlyEnabled(Ext_F) | currentlyEnabled(Ext_Zfinx)
-function clause is_CSR_defined (0x003) = currentlyEnabled(Ext_F) | currentlyEnabled(Ext_Zfinx)
+function clause is_CSR_accessible (0x001, _, _) = currentlyEnabled(Ext_F) | currentlyEnabled(Ext_Zfinx)
+function clause is_CSR_accessible (0x002, _, _) = currentlyEnabled(Ext_F) | currentlyEnabled(Ext_Zfinx)
+function clause is_CSR_accessible (0x003, _, _) = currentlyEnabled(Ext_F) | currentlyEnabled(Ext_Zfinx)
 
 function clause read_CSR (0x001) = zero_extend(fcsr[FFLAGS])
 function clause read_CSR (0x002) = zero_extend(fcsr[FRM])
 function clause read_CSR (0x003) = zero_extend(fcsr.bits)
 
-function clause write_CSR (0x001, value) = { write_fcsr(fcsr[FRM], value[4..0]); zero_extend(fcsr[FFLAGS]) }
-function clause write_CSR (0x002, value) = { write_fcsr(value[2..0], fcsr[FFLAGS]); zero_extend(fcsr[FRM]) }
-function clause write_CSR (0x003, value) = { write_fcsr(value[7..5], value[4..0]); zero_extend(fcsr.bits) }
+function clause write_CSR (0x001, value) = { write_fcsr(fcsr[FRM], value[4..0]); Ok(zero_extend(fcsr[FFLAGS])) }
+function clause write_CSR (0x002, value) = { write_fcsr(value[2..0], fcsr[FFLAGS]); Ok(zero_extend(fcsr[FRM])) }
+function clause write_CSR (0x003, value) = { write_fcsr(value[7..5], value[4..0]); Ok(zero_extend(fcsr.bits)) }
 
 /* **************************************************************** */

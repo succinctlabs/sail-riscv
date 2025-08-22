@@ -12,7 +12,11 @@ if(POLICY CMP0135)
     cmake_policy(SET CMP0135 OLD)
 endif()
 
-project(sail_riscv)
+include(cmake/project_version.cmake)
+project(sail-riscv
+  VERSION ${sail_riscv_release_version}
+  HOMEPAGE_URL "https://github.com/riscv/sail-riscv"
+)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
@@ -51,8 +55,17 @@ endif()
 
 add_compile_options(-Wall -Wextra -Wno-sign-compare)
 include(CheckCCompilerFlag)
-check_c_compiler_flag(-Wself-assign HAVE_WSELF_ASSIGN)
 check_c_compiler_flag(-Wimplicit-fallthrough HAVE_WIMPLICIT_FALLTHROUGH)
+
+# Ensure we globally build with assertions enabled even in non-Debug
+# builds, following the approach of LLVM in
+#   llvm/cmake/modules/HandleLLVMOptions.cmake
+string(TOUPPER "${CMAKE_BUILD_TYPE}" uppercase_CMAKE_BUILD_TYPE)
+# On non-Debug builds cmake automatically defines NDEBUG; so
+# explicitly undefine it:
+if(NOT uppercase_CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+    add_compile_options($<$<OR:$<COMPILE_LANGUAGE:C>,$<COMPILE_LANGUAGE:CXX>>:-UNDEBUG>)
+endif()
 
 # Extra CMake files.
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
@@ -91,7 +104,7 @@ if (DOWNLOAD_GMP)
         URL https://ftp.gnu.org/gnu/gmp/gmp-6.3.0.tar.xz https://gmplib.org/download/gmp/gmp-6.3.0.tar.xz https://ftpmirror.gnu.org/gnu/gmp/gmp-6.3.0.tar.xz
         URL_HASH SHA256=a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898
         INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/gmp
-        CONFIGURE_COMMAND "<SOURCE_DIR>/configure" "--prefix=<INSTALL_DIR>" --disable-shared --enable-static
+        CONFIGURE_COMMAND "<SOURCE_DIR>/configure" "--prefix=<INSTALL_DIR>" --disable-shared --enable-static --with-pic
         # The libgmp.a output is created by the install step but since GMP::GMP
         # depends on the entire ExternalProject build, we can pretend it is
         # created by the build.
@@ -138,8 +151,10 @@ message(STATUS "Sail library directory: ${sail_dir}")
 
 option(COVERAGE "Compile with Sail coverage collection enabled.")
 
-# Softfloat support.
-add_subdirectory("dependencies/softfloat")
+include(GNUInstallDirs)
+
+# Third party dependencies.
+add_subdirectory("dependencies")
 
 # Sail C runtime.
 add_subdirectory("sail_runtime")
@@ -159,25 +174,12 @@ add_subdirectory("test")
 # Handwritten support files for provers
 add_subdirectory("handwritten_support")
 
-# Release packaging.
-if (NOT CPACK_GENERATOR)
-    if (WINDOWS)
-        set(CPACK_GENERATOR "ZIP")
-    else()
-        set(CPACK_GENERATOR "TGZ")
-    endif()
-endif()
-if (DARWIN)
-    # ${CMAKE_SYSTEM_NAME} is unfortunately "Darwin", but we want "Mac".
-    set(CPACK_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}-Mac-${CMAKE_HOST_SYSTEM_PROCESSOR}")
-else()
-    set(CPACK_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}-${CMAKE_SYSTEM_NAME}-${CMAKE_HOST_SYSTEM_PROCESSOR}")
-endif()
-include(CPack)
-
 # Convenience targets.
 add_custom_target(csim DEPENDS sail_riscv_sim)
 add_custom_target(check DEPENDS generated_model_rv)
 
 # TODO: Add `interpret` target.
 # TODO: Add hol4 target.
+
+# Release packaging.
+include(cmake/packaging.cmake)

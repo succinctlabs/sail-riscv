@@ -44,10 +44,11 @@ The simulator can be used to execute small test binaries.
 $ build/c_emulator/sail_riscv_sim <elf-file>
 ```
 
-A suite of RV32 and RV64 test programs derived from the
-[`riscv-tests`](https://github.com/riscv/riscv-tests) test-suite is
-included under [test/riscv-tests/](test/riscv-tests/). The test-suite
-can be run using `make test` or `ctest` in the build directory.
+Test suites targeting RV32, RV64, and RVV (RISC-V Vector Extension) are downloaded automatically when enabled.
+The standard `riscv-tests` suite is enabled by default, while vector extension tests
+can be enabled via CMake options such as `-DENABLE_RISCV_VECTOR_TESTS_V128_E32=ON`.
+All enabled test suites can be executed using `make test` or `ctest` in the build directory
+(see `test/README.md` for more information).
 
 ### Configuring platform options
 
@@ -71,12 +72,15 @@ For booting operating system images, see the information under the
 ### The Sail specification currently captures the following ISA extensions and features:
 
 - RV32I and RV64I base ISAs, v2.1
+- RV32E and RV64E base ISAs, v2.0
 - Zifencei extension for instruction-fetch fence, v2.0
 - Zicsr extension for CSR instructions, v2.0
 - Zicntr and Zihpm extensions for counters, v2.0
 - Zicond extension for integer conditional operations, v1.0
 - Zicbom and Zicboz extensions for cache-block management (Zicbop not currently supported), v1.0
 - Zimop extension for May-Be-Operations, v1.0
+- Zihintntl extension for Non-temporal Locality Hints, v1.0
+- Zihintpause extension for Pause Hint, v2.0
 - M extension for integer multiplication and division, v2.0
 - Zmmul extension for integer multiplication only, v1.0
 - A extension for atomic instructions, v2.1
@@ -84,6 +88,7 @@ For booting operating system images, see the information under the
 - Zaamo extension for atomic memory operations, v1.0
 - Zawrs extension for Wait-on-Reservation-Set instructions, v1.01
 - Zabha extension for byte and halfword atomic memory operations, v1.0
+- Zacas extension atomic Compare-and-Swap (CAS) instructions, v1.0.0
 - F and D extensions for single and double-precision floating-point, v2.2
 - Zfh and Zfhmin extensions for half-precision floating-point, v1.0
 - Zfa extension for additional floating-point instructions, v1.0
@@ -101,9 +106,15 @@ For booting operating system images, see the information under the
 - Zvbc extension for vector carryless multiplication, v1.0
 - Zvkb extension for vector cryptography bit-manipulation, v1.0
 - Zvkg extension for vector GCM/GMAC, v1.0
+- Zvkn extension for vector cryptography NIST Algorithm Suite
+- Zvknc extension for vector cryptography NIST Algorithm Suite with carryless multiply
 - Zvkned extension for vector cryptography NIST Suite: Vector AES Block Cipher, v1.0
+- Zvkng extension for vector cryptography NIST Algorithm Suite with GCM
 - Zvknha and Zvknhb extensions for vector cryptography NIST Suite: Vector SHA-2 Secure Hash, v1.0
+- Zvks extension for vector cryptography ShangMi Algorithm Suite
+- Zvksc extension for vector cryptography ShangMi Algorithm Suite with carryless multiplication
 - Zvksed extension for vector cryptography ShangMi Suite: SM4 Block Cipher, v1.0
+- Zvksg extension for vector cryptography ShangMi Algorithm Suite with GCM
 - Zvksh extension for vector cryptography ShangMi Suite: SM3 Secure Hash, v1.0
 - Zvkt extension for vector data independent execution latency, v1.0 (no impact on model)
 - Machine, Supervisor, and User modes
@@ -289,8 +300,7 @@ sail-riscv
 - dependencies            // external dependencies (currently only SoftFloat)
 - sail_runtime            // build files for sail runtime
 - doc                     // documentation, including a reading guide
-- test                    // test files
-  - riscv-tests           // snapshot of tests from the riscv/riscv-tests github repo
+- test                    // CMake test setup and URL references for RISC-V test suites
   - first_party           // custom C and assembly tests for the model
 - os-boot                 // information and sample files for booting OS images
 ```

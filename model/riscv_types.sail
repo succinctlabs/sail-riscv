@@ -17,28 +17,37 @@ type instbits = bits(32)
 type pagesize_bits : Int = 12
 let  pagesize_bits = sizeof(pagesize_bits)
 
+// RV32E and RV64E Base Integer Instruction Sets. If this enabled then
+// the model will only support E (16 integer registers). It is allowed
+// to have a design where `misa[I]` is writable to turn E on and off,
+// but this model does not support that.
+type base_E_enabled : Bool = config base.E
+let base_E_enabled = constraint(base_E_enabled)
+
 /* register identifiers */
 
-newtype regidx = Regidx : bits(5)  /* uncompressed register identifiers */
+type regidx_bit_width = if base_E_enabled then 4 else 5
+let regidx_bit_width = sizeof(regidx_bit_width)
+
+newtype regidx = Regidx : bits(regidx_bit_width)  /* uncompressed register identifiers */
 newtype cregidx = Cregidx : bits(3) /* identifiers in RVC instructions */
 type csreg = bits(12)  /* CSR addressing */
 
-function regidx_offset(Regidx(r) : regidx, o : bits(5)) -> regidx = Regidx(r + o)
+function regidx_offset(Regidx(r) : regidx, o : bits(regidx_bit_width)) -> regidx = Regidx(r + o)
 function regidx_offset_range(Regidx(r) : regidx, o : range(0, 31)) -> regidx = Regidx(r + o)
-function regidx_bits(Regidx(b) : regidx) -> bits(5) = b
+function regidx_bits(Regidx(b) : regidx) -> bits(regidx_bit_width) = b
 overload operator + = { regidx_offset, regidx_offset_range }
 /* register file indexing */
 
-newtype regno = Regno : range(0, 31)
+newtype regno = Regno : range(0, 2 ^ regidx_bit_width - 1)
 
 /* mapping RVC register indices into normal indices */
-val creg2reg_idx : cregidx -> regidx
-function creg2reg_idx(Cregidx(i)) = Regidx(0b01 @ i)
+function creg2reg_idx(Cregidx(i) : cregidx) -> regidx = Regidx(zero_extend(0b1 @ i))
 
 /* some architecture and ABI relevant register identifiers */
-let zreg : regidx = Regidx(0b00000) /* x0, zero register  */
-let ra   : regidx = Regidx(0b00001) /* x1, return address */
-let sp   : regidx = Regidx(0b00010) /* x2, stack pointer  */
+let zreg : regidx = Regidx(zero_extend(0b00)) /* x0, zero register  */
+let ra   : regidx = Regidx(zero_extend(0b01)) /* x1, return address */
+let sp   : regidx = Regidx(zero_extend(0b10)) /* x2, stack pointer  */
 
 /* base architecture definitions */
 
@@ -61,7 +70,7 @@ mapping privLevel_bits : Privilege <-> priv_level = {
   User       <-> 0b00,
   Supervisor <-> 0b01,
   Machine    <-> 0b11,
-  backwards 0b10 => internal_error(__FILE__, __LINE__, "Invalid privilege level: " ^ BitStr(0b10))
+  backwards 0b10 => internal_error(__FILE__, __LINE__, "Invalid privilege level: " ^ bits_str(0b10))
 }
 
 function privLevel_to_bits(p : Privilege) -> priv_level = privLevel_bits(p)
@@ -84,8 +93,6 @@ union AccessType ('a : Type) = {
   ReadWrite : ('a, 'a),
   InstructionFetch : unit
 }
-
-type word_width = {1, 2, 4, 8}
 
 type is_mem_width('w) = 'w in {1, 2, 4, 8}
 
@@ -263,41 +270,7 @@ function satpMode_of_bits(a : Architecture, m : satp_mode) -> option(SATPMode) =
 
 type csrRW = bits(2)  /* read/write */
 
-/* instruction opcode grouping */
-enum uop = {LUI, AUIPC}                          /* upper immediate ops */
-enum bop = {BEQ, BNE, BLT, BGE, BLTU, BGEU}      /* branch ops */
-enum iop = {ADDI, SLTI, SLTIU, XORI, ORI, ANDI}  /* immediate ops */
-enum sop = {SLLI, SRLI, SRAI}                    /* shift ops */
-enum rop = {ADD, SUB, SLL, SLT, SLTU, XOR,
-            SRL, SRA, OR, AND}                   /* reg-reg ops */
-
-enum ropw  = {ADDW, SUBW, SLLW, SRLW, SRAW}           /* reg-reg 32-bit ops */
-enum sopw  = {SLLIW, SRLIW, SRAIW}                    /* RV64-only shift ops */
-enum amoop = {AMOSWAP, AMOADD, AMOXOR, AMOAND, AMOOR,
-              AMOMIN, AMOMAX, AMOMINU, AMOMAXU}       /* AMO ops */
-enum csrop = {CSRRW, CSRRS, CSRRC}                    /* CSR ops */
-
-enum cbop_zicbom = {CBO_CLEAN, CBO_FLUSH, CBO_INVAL}  /* Zicbom ops */
-
-enum brop_zba = {SH1ADD, SH2ADD, SH3ADD}
-
-enum brop_zbb = {ANDN, ORN, XNOR, MAX, MAXU, MIN, MINU, ROL, ROR}
-
-enum brop_zbkb = {PACK, PACKH}
-
-enum brop_zbs = {BCLR, BEXT, BINV, BSET}
-
-enum bropw_zba = {ADDUW, SH1ADDUW, SH2ADDUW, SH3ADDUW}
-
-enum bropw_zbb = {ROLW, RORW}
-
-enum biop_zbs = {BCLRI, BEXTI, BINVI, BSETI}
-
-enum extop_zbb = {SEXTB, SEXTH, ZEXTH}
-
-enum zicondop = {CZERO_EQZ, CZERO_NEZ}
-
-enum wrsop = {WRS_STO, WRS_NTO}
+/* Wait state reasons */
 
 enum WaitReason = {WAIT_WFI, WAIT_WRS_STO, WAIT_WRS_NTO}
 mapping wait_name : WaitReason <-> string = {
@@ -308,23 +281,39 @@ mapping wait_name : WaitReason <-> string = {
 
 overload to_str = {wait_name}
 
+// Width of access for most instructions (load/store, etc.).
+type word_width = {1, 2, 4, 8}
+// Some instructions allow 128-bit accesses.
+type word_width_wide = {1, 2, 4, 8, 16}
+
 // Get the bit encoding of word_width.
-mapping size_enc : word_width <-> bits(2) = {
+mapping width_enc : word_width <-> bits(2) = {
   1 <-> 0b00,
   2 <-> 0b01,
   4 <-> 0b10,
   8 <-> 0b11,
 }
 
-mapping size_mnemonic : word_width <-> string = {
+mapping width_mnemonic : word_width <-> string = {
   1 <-> "b",
   2 <-> "h",
   4 <-> "w",
   8 <-> "d",
 }
 
-struct mul_op = {
-  high       : bool,
-  signed_rs1 : bool,
-  signed_rs2 : bool
+// Get the bit encoding of word_width.
+mapping width_enc_wide : word_width_wide <-> bits(3) = {
+  1  <-> 0b000,
+  2  <-> 0b001,
+  4  <-> 0b010,
+  8  <-> 0b011,
+  16 <-> 0b100,
+}
+
+mapping width_mnemonic_wide : word_width_wide <-> string = {
+  1  <-> "b",
+  2  <-> "h",
+  4  <-> "w",
+  8  <-> "d",
+  16 <-> "q",
 }

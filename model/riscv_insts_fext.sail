@@ -264,6 +264,14 @@ function fle_S   (v1,       v2,        is_quiet) = {
 
 function haveSingleFPU() -> bool = currentlyEnabled(Ext_F) | currentlyEnabled(Ext_Zfinx)
 
+function float_load_store_width_supported(width : word_width) -> bool =
+  match width {
+    1 => false,
+    2 => currentlyEnabled(Ext_Zfhmin),
+    4 => currentlyEnabled(Ext_F),
+    8 => currentlyEnabled(Ext_D),
+  }
+
 /* ****************************************************************** */
 /* Floating-point loads                                               */
 
@@ -274,17 +282,9 @@ union clause instruction = LOAD_FP : (bits(12), regidx, fregidx, word_width)
 
 /* instruction <-> Binary encoding ================================ */
 
-mapping clause encdec = LOAD_FP(imm, rs1, rd, 2)
-  <-> imm @ encdec_reg(rs1) @ 0b001 @ encdec_freg(rd) @ 0b000_0111
-  when currentlyEnabled(Ext_Zfhmin)
-
-mapping clause encdec = LOAD_FP(imm, rs1, rd, 4)
-  <-> imm @ encdec_reg(rs1) @ 0b010 @ encdec_freg(rd) @ 0b000_0111
-  when currentlyEnabled(Ext_F)
-
-mapping clause encdec = LOAD_FP(imm, rs1, rd, 8)
-  <-> imm @ encdec_reg(rs1) @ 0b011 @ encdec_freg(rd) @ 0b000_0111
-  when currentlyEnabled(Ext_D)
+mapping clause encdec = LOAD_FP(imm, rs1, rd, width)
+  <-> imm @ encdec_reg(rs1) @ 0b0 @ width_enc(width) @ encdec_freg(rd) @ 0b000_0111
+  when float_load_store_width_supported(width)
 
 /* Execution semantics ================================ */
 
@@ -302,7 +302,7 @@ function clause execute(LOAD_FP(imm, rs1, rd, width)) = {
 /* instruction -> Assembly notation ================================ */
 
 mapping clause assembly = LOAD_FP(imm, rs1, rd, width)
-                      <-> "fl" ^ size_mnemonic(width)
+                      <-> "fl" ^ width_mnemonic(width)
                           ^ spc() ^ freg_or_reg_name(rd)
                           ^ sep() ^ hex_bits_signed_12(imm)
                           ^ opt_spc() ^ "(" ^ opt_spc() ^ reg_name(rs1) ^ opt_spc() ^ ")"
@@ -317,17 +317,9 @@ union clause instruction = STORE_FP : (bits(12), fregidx, regidx, word_width)
 
 /* instruction <-> Binary encoding ================================ */
 
-mapping clause encdec = STORE_FP(imm7 @ imm5, rs2, rs1, 2)
-  <-> imm7 : bits(7) @ encdec_freg(rs2) @ encdec_reg(rs1) @ 0b001 @ imm5 : bits(5) @ 0b010_0111
-  when currentlyEnabled(Ext_Zfhmin)
-
-mapping clause encdec = STORE_FP(imm7 @ imm5, rs2, rs1, 4)
-  <-> imm7 : bits(7) @ encdec_freg(rs2) @ encdec_reg(rs1) @ 0b010 @ imm5 : bits(5) @ 0b010_0111
-  when currentlyEnabled(Ext_F)
-
-mapping clause encdec = STORE_FP(imm7 @ imm5, rs2, rs1, 8)
-  <-> imm7 : bits(7) @ encdec_freg(rs2) @ encdec_reg(rs1) @ 0b011 @ imm5 : bits(5) @ 0b010_0111
-  when currentlyEnabled(Ext_D)
+mapping clause encdec = STORE_FP(imm7 @ imm5, rs2, rs1, width)
+  <-> imm7 : bits(7) @ encdec_freg(rs2) @ encdec_reg(rs1) @ 0b0 @ width_enc(width) @ imm5 : bits(5) @ 0b010_0111
+  when float_load_store_width_supported(width)
 
 /* Execution semantics ================================ */
 
@@ -347,7 +339,7 @@ function clause execute (STORE_FP(imm, rs2, rs1, width)) = {
 /* instruction -> Assembly notation ================================ */
 
 mapping clause assembly = STORE_FP(imm, rs2, rs1, width)
-                      <-> "fs" ^ size_mnemonic(width)
+                      <-> "fs" ^ width_mnemonic(width)
                           ^ spc() ^ freg_name(rs2)
                           ^ sep() ^ hex_bits_signed_12(imm)
                           ^ opt_spc() ^ "(" ^ opt_spc() ^ reg_name(rs1) ^ opt_spc() ^ ")"

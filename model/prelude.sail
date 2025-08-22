@@ -32,14 +32,6 @@ overload operator & = {and_vec}
 
 overload operator | = {or_vec}
 
-function bit_str(b: bit) -> string =
-  match b {
-    bitzero => "0b0",
-    bitone => "0b1"
-  }
-
-overload BitStr = {bits_str, bit_str}
-
 overload operator ^ = {xor_vec, concat_str}
 
 val sub_vec = pure {c: "sub_bits", lean: "_lean_sub", _: "sub_vec"} : forall 'n. (bits('n), bits('n)) -> bits('n)
@@ -63,8 +55,12 @@ overload max = {max_int}
 
 val print_string = pure "print_string" : (string, string) -> unit
 
-val print_instr    = pure {interpreter: "print_endline", c: "print_instr", lem: "print_dbg", _: "print_endline"} : string -> unit
-val print_platform = pure {interpreter: "print_endline", c: "print_platform", lem: "print_dbg", _: "print_endline"} : string -> unit
+// Print to the --trace log file.
+val print_log = pure {interpreter: "print_endline", c: "print_log", lem: "print_dbg", _: "print_endline"} : string -> unit
+// Print an instruction to the --trace log file. The second argument is PC which can be used for
+// symbolization. This is only supported by the C backend so other backends just do a normal print.
+val print_log_instr = pure {c: "print_log_instr"} : (string, bits(64)) -> unit
+function print_log_instr(message, pc) = print_log(message)
 
 val print_step = pure {c: "print_step"} : unit -> unit
 function print_step() = ()
@@ -111,6 +107,8 @@ function bool_to_bit(x : bool) -> bit = bool_bit(x)
 function bit_to_bool(x : bit) -> bool = bool_bit(x)
 function bool_to_bits(x : bool) -> bits(1) = bool_bits(x)
 function bits_to_bool(x : bits(1)) -> bool = bool_bits(x)
+function bit_to_bits(x : bit) -> bits(1) = bool_bits(bit_to_bool(x))
+function bits_to_bit(x : bits(1)) -> bit = bool_to_bit(bits_to_bool(x))
 
 // Convert an integer to bits. This requires that the integer is known to fit
 // inside the resulting bit vector. Note this only admits non-negative numbers.

@@ -1,4 +1,5 @@
-variable ARCH = "RV32"
+variable ARCH = "RV64"
+variable TERMINATION_FILE = false
 
 riscv_core {
   files

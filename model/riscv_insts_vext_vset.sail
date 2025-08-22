@@ -16,7 +16,7 @@ mapping sew_flag : string <-> bits(3) = {
   "e8"    <-> 0b000,
   "e16"   <-> 0b001,
   "e32"   <-> 0b010,
-  "e64"   <-> 0b011
+  "e64"   <-> 0b011,
 }
 
 mapping maybe_lmul_flag : string <-> bits(3) = {
@@ -28,17 +28,25 @@ mapping maybe_lmul_flag : string <-> bits(3) = {
   sep() ^ "m4"    <-> 0b010,
   sep() ^ "m8"    <-> 0b011,
   forwards ""      => 0b000, /* m1 by default */
-
 }
 
 mapping ta_flag : string <-> bits(1) = {
   sep() ^ "ta" <-> 0b1,
-  sep() ^ "tu" <-> 0b0
+  sep() ^ "tu" <-> 0b0,
 }
 
 mapping ma_flag : string <-> bits(1) = {
   sep() ^ "ma" <-> 0b1,
-  sep() ^ "mu" <-> 0b0
+  sep() ^ "mu" <-> 0b0,
+}
+
+mapping vtype_assembly : string <-> (bits(1), bits(1), bits(3), bits(3)) = {
+  // Mnemonics are preferable but there's no mnemonic for lmul=0b100.
+  sew_flag(sew) ^ maybe_lmul_flag(lmul) ^ ta_flag(ta) ^ ma_flag(ma) <-> (ma, ta, sew, lmul)
+    when sew[2] != bitone & lmul != 0b100,
+  // However that is still potentially a legal instruction so you can
+  // use an integer for the whole vtype in that case.
+  hex_bits_8(ma @ ta @ sew @ lmul)  <-> (ma, ta, sew, lmul),
 }
 
 val handle_illegal_vtype : unit -> unit
@@ -93,8 +101,8 @@ function clause execute VSETVLI(ma, ta, sew, lmul, rs1, rd) = {
   let LMUL_pow_new = lmul_pow_val(lmul);
   let SEW_pow_new = sew_pow_val(sew);
 
-  if SEW_pow_new > (LMUL_pow_new + ELEN_pow) then { handle_illegal_vtype(); return RETIRE_SUCCESS };
-  let VLMAX = 2 ^ (VLEN_pow + LMUL_pow_new - SEW_pow_new);
+  if SEW_pow_new > (LMUL_pow_new + elen_exp) then { handle_illegal_vtype(); return RETIRE_SUCCESS };
+  let VLMAX = 2 ^ (LMUL_pow_new + vlen_exp - SEW_pow_new);
 
   /* set vl according to VLMAX and AVL */
   if (rs1 != zreg) then { /* normal stripmining */
@@ -125,7 +133,7 @@ function clause execute VSETVLI(ma, ta, sew, lmul, rs1, rd) = {
 }
 
 mapping clause assembly = VSETVLI(ma, ta, sew, lmul, rs1, rd)
-  <-> "vsetvli" ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ sew_flag(sew) ^ maybe_lmul_flag(lmul) ^ ta_flag(ta) ^ ma_flag(ma)
+  <-> "vsetvli" ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ vtype_assembly(ma, ta, sew, lmul)
 
 /* *********************************** vsetvl ************************************ */
 union clause instruction = VSETVL : (regidx, regidx, regidx)
@@ -157,8 +165,8 @@ function clause execute VSETVL(rs2, rs1, rd) = {
   let LMUL_pow_new = lmul_pow_val(lmul);
   let SEW_pow_new = sew_pow_val(sew);
 
-  if SEW_pow_new > (LMUL_pow_new + ELEN_pow) then { handle_illegal_vtype(); return RETIRE_SUCCESS };
-  let VLMAX = 2 ^ (VLEN_pow + LMUL_pow_new - SEW_pow_new);
+  if SEW_pow_new > (LMUL_pow_new + elen_exp) then { handle_illegal_vtype(); return RETIRE_SUCCESS };
+  let VLMAX = 2 ^ (LMUL_pow_new + vlen_exp - SEW_pow_new);
 
   /* set vl according to VLMAX and AVL */
   if (rs1 != zreg) then { /* normal stripmining */
@@ -207,8 +215,8 @@ function clause execute VSETIVLI(ma, ta, sew, lmul, uimm, rd) = {
   let LMUL_pow_new = lmul_pow_val(lmul);
   let SEW_pow_new = sew_pow_val(sew);
 
-  if SEW_pow_new > (LMUL_pow_new + ELEN_pow) then { handle_illegal_vtype(); return RETIRE_SUCCESS };
-  let VLMAX = 2 ^ (VLEN_pow + LMUL_pow_new - SEW_pow_new);
+  if SEW_pow_new > (LMUL_pow_new + elen_exp) then { handle_illegal_vtype(); return RETIRE_SUCCESS };
+  let VLMAX = 2 ^ (LMUL_pow_new + vlen_exp - SEW_pow_new);
 
   /* set vl according to VLMAX and AVL */
   let AVL = unsigned(uimm); /* AVL is encoded as 5-bit zero-extended imm in the rs1 field */
@@ -229,4 +237,4 @@ function clause execute VSETIVLI(ma, ta, sew, lmul, uimm, rd) = {
 }
 
 mapping clause assembly = VSETIVLI(ma, ta, sew, lmul, uimm, rd)
-  <-> "vsetivli" ^ spc() ^ reg_name(rd) ^ sep() ^ hex_bits_5(uimm) ^ sep() ^ sew_flag(sew) ^ maybe_lmul_flag(lmul) ^ ta_flag(ta) ^ ma_flag(ma)
+  <-> "vsetivli" ^ spc() ^ reg_name(rd) ^ sep() ^ hex_bits_5(uimm) ^ sep() ^ vtype_assembly(ma, ta, sew, lmul)

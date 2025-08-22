@@ -41,39 +41,43 @@ mapping clause assembly = UTYPE(imm, rd, op)
   <-> utype_mnemonic(op) ^ spc() ^ reg_name(rd) ^ sep() ^ hex_bits_signed_20(imm)
 
 /* ****************************************************************** */
+
+// Jump execution to a specified target address. This can fail
+// due to the target not being 4-byte aligned, or due to extension checks.
+// Callers must ensure that the target address is 2-byte aligned.
+function jump_to(target : xlenbits) -> ExecutionResult = {
+  // Extensions get the first checks on the prospective target address.
+  match ext_control_check_pc(target) {
+    Ext_ControlAddr_Error(e) => Ext_ControlAddr_Check_Failure(e),
+    Ext_ControlAddr_OK(target) => {
+      // Perform standard alignment check.
+      let target_bits = bits_of(target);
+      // Check target is at least 2-byte aligned (callers must ensure
+      // this so it can be an assertion).
+      assert(target_bits[0] == bitzero);
+      // If it is not 4-byte aligned and compressed instructions are
+      // not enabled then raise an alignment exception.
+      if bit_to_bool(target_bits[1]) & not(currentlyEnabled(Ext_Zca)) then {
+        Memory_Exception(target, E_Fetch_Addr_Align())
+      } else {
+        set_next_pc(target_bits);
+        RETIRE_SUCCESS
+      }
+    }
+  }
+}
+
+/* ****************************************************************** */
 union clause instruction = JAL : (bits(21), regidx)
 
 mapping clause encdec = JAL(imm_19 @ imm_7_0 @ imm_8 @ imm_18_13 @ imm_12_9 @ 0b0, rd)
   <-> imm_19 : bits(1) @ imm_18_13 : bits(6) @ imm_12_9 : bits(4) @ imm_8 : bits(1) @ imm_7_0 : bits(8) @ encdec_reg(rd) @ 0b1101111
 
-/*
-ideally we want some syntax like
-
-mapping clause encdec = JAL(imm @ 0b0, rd) <-> imm[19] @ imm[9..0] @ imm[10] @ imm[18..11] @ encdec_reg(rd) @ 0b1101111
-
-match bv {
-  imm[19] @ imm[9..0] @ imm[10] @ imm[18..11] -> imm @ 0b0
-}
-
-but this is difficult
-*/
-
 function clause execute (JAL(imm, rd)) = {
-  let target = PC + sign_extend(imm);
-  /* Extensions get the first checks on the prospective target address. */
-  match ext_control_check_pc(target) {
-    Ext_ControlAddr_Error(e) => Ext_ControlAddr_Check_Failure(e),
-    Ext_ControlAddr_OK(target) => {
-      /* Perform standard alignment check */
-      let target_bits = bits_of(target);
-      if bit_to_bool(target_bits[1]) & not(currentlyEnabled(Ext_Zca)) then {
-        Memory_Exception(target, E_Fetch_Addr_Align())
-      } else {
-        X(rd) = get_next_pc();
-        set_next_pc(target_bits);
-        RETIRE_SUCCESS
-      }
-    }
+  let link_address = get_next_pc();
+  match jump_to(PC + sign_extend(imm)) {
+    Retire_Success() => { X(rd) = link_address; Retire_Success() },
+    failure => failure,
   }
 }
 
@@ -117,22 +121,9 @@ function clause execute (BTYPE(imm, rs2, rs1, op)) = {
     BLTU => X(rs1) <_u X(rs2),
     BGEU => X(rs1) >=_u X(rs2)
   };
-  if taken then {
-    let target = PC + sign_extend(imm);
-    /* Extensions get the first checks on the prospective target address. */
-    match ext_control_check_pc(target) {
-      Ext_ControlAddr_Error(e) => Ext_ControlAddr_Check_Failure(e),
-      Ext_ControlAddr_OK(target) => {
-        let target_bits = bits_of(target);
-        if bit_to_bool(target_bits[1]) & not(currentlyEnabled(Ext_Zca)) then {
-          Memory_Exception(target, E_Fetch_Addr_Align())
-        } else {
-          set_next_pc(target_bits);
-          RETIRE_SUCCESS
-        }
-      }
-    }
-  } else RETIRE_SUCCESS
+  if taken
+  then jump_to(PC + sign_extend(imm))
+  else RETIRE_SUCCESS
 }
 
 mapping btype_mnemonic : bop <-> string = {
@@ -283,7 +274,7 @@ val extend_value : forall 'n, 0 < 'n <= xlen. (bool, bits('n)) -> xlenbits
 function extend_value(is_unsigned, value) = if is_unsigned then zero_extend(value) else sign_extend(value)
 
 mapping clause encdec = LOAD(imm, rs1, rd, is_unsigned, width)
-  <-> imm @ encdec_reg(rs1) @ bool_bits(is_unsigned) @ size_enc(width) @ encdec_reg(rd) @ 0b0000011
+  <-> imm @ encdec_reg(rs1) @ bool_bits(is_unsigned) @ width_enc(width) @ encdec_reg(rd) @ 0b0000011
   when valid_load_encdec(width, is_unsigned)
 
 function clause execute (LOAD(imm, rs1, rd, is_unsigned, width)) = {
@@ -307,13 +298,13 @@ mapping maybe_u : bool <-> string = {
 }
 
 mapping clause assembly = LOAD(imm, rs1, rd, is_unsigned, width)
-  <-> "l" ^ size_mnemonic(width) ^ maybe_u(is_unsigned) ^ spc() ^ reg_name(rd) ^ sep() ^ hex_bits_signed_12(imm) ^ "(" ^ reg_name(rs1) ^ ")"
+  <-> "l" ^ width_mnemonic(width) ^ maybe_u(is_unsigned) ^ spc() ^ reg_name(rd) ^ sep() ^ hex_bits_signed_12(imm) ^ "(" ^ reg_name(rs1) ^ ")"
 
 /* ****************************************************************** */
 union clause instruction = STORE : (bits(12), regidx, regidx, word_width)
 
 mapping clause encdec = STORE(imm7 @ imm5, rs2, rs1, width)
-  <-> imm7 : bits(7) @ encdec_reg(rs2) @ encdec_reg(rs1) @ 0b0 @ size_enc(width) @ imm5 : bits(5) @ 0b0100011
+  <-> imm7 : bits(7) @ encdec_reg(rs2) @ encdec_reg(rs1) @ 0b0 @ width_enc(width) @ imm5 : bits(5) @ 0b0100011
   when width <= xlen_bytes
 
 function clause execute (STORE(imm, rs2, rs1, width)) = {
@@ -330,7 +321,7 @@ function clause execute (STORE(imm, rs2, rs1, width)) = {
 }
 
 mapping clause assembly = STORE(imm, rs2, rs1, width)
-  <-> "s" ^ size_mnemonic(width) ^ spc() ^ reg_name(rs2) ^ sep() ^ hex_bits_signed_12(imm) ^ opt_spc() ^ "(" ^ opt_spc() ^ reg_name(rs1) ^ opt_spc() ^ ")"
+  <-> "s" ^ width_mnemonic(width) ^ spc() ^ reg_name(rs2) ^ sep() ^ hex_bits_signed_12(imm) ^ opt_spc() ^ "(" ^ opt_spc() ^ reg_name(rs1) ^ opt_spc() ^ ")"
 
 /* ****************************************************************** */
 union clause instruction = FENCE : (bits(4), bits(4))

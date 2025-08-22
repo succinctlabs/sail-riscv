@@ -11,6 +11,15 @@
 register PC       : xlenbits
 register nextPC   : xlenbits
 
+/* Mappings for encoding */
+
+mapping encdec_reg : regidx <-> bits(5) = {
+  forwards Regidx(r) => zero_extend(r),
+  backwards r if not(base_E_enabled) | r[4] == bitzero => Regidx(r[regidx_bit_width - 1 .. 0]),
+}
+
+mapping encdec_creg : cregidx <-> bits(3) = { Cregidx(r) <-> r }
+
 /* mappings for assembly */
 
 mapping reg_abi_name_raw : bits(5) <-> string = {
@@ -84,9 +93,11 @@ mapping reg_arch_name_raw : bits(5) <-> string = {
     0b11111 <-> "x31",
 }
 
+// Mapping from 4/5 back to 5 bits here makes the name mapping much easier.
+// If you call `reg_name("t6")` on an E hart you'll get a mapping failure.
 mapping reg_name : regidx <-> string = {
-  Regidx(i) if get_config_use_abi_names()      <-> reg_abi_name_raw(i),
-  Regidx(i) if not(get_config_use_abi_names()) <-> reg_arch_name_raw(i),
+  encdec_reg(i) if get_config_use_abi_names()      <-> reg_abi_name_raw(i),
+  encdec_reg(i) if not(get_config_use_abi_names()) <-> reg_arch_name_raw(i),
 }
 
 // Special mapping for the sp register for use in assembly for sp-relative
@@ -96,7 +107,7 @@ mapping sp_reg_name : unit <-> string = {
   () if not(get_config_use_abi_names()) <-> "x2",
 }
 
-mapping creg_name : cregidx <-> string = { Cregidx(i) <-> reg_name(Regidx(0b01 @ i)) }
+mapping creg_name : cregidx <-> string = { Cregidx(i) <-> reg_name(encdec_reg(0b01 @ i)) }
 
 function xreg_write_callback(reg : regidx, value : xlenbits) -> unit = {
   let name = reg_name(reg);
@@ -223,8 +234,16 @@ function wX_bits(Regidx(i) : regidx, data : xlenbits) -> unit = {
 
 overload X = {rX_bits, wX_bits, rX, wX}
 
-/* Mappings for encoding */
+// X_pair accesses a pair of registers. If the index is x0 then
+// it acts as if both registers in the pair are x0.
 
-mapping encdec_reg : regidx <-> bits(5) = { Regidx(r) <-> r }
+function rX_pair_bits(i : regidx) -> bits(xlen * 2) =
+  if i != zreg then X(i + 1) @ X(i) else zeros()
 
-mapping encdec_creg : cregidx <-> bits(3) = { Cregidx(r) <-> r }
+function wX_pair_bits(i : regidx, data : bits(xlen * 2)) -> unit =
+  if i != zreg then {
+    X(i) = data[xlen - 1 .. 0];
+    X(i + 1) = data[xlen * 2 - 1 .. xlen];
+  }
+
+overload X_pair = {rX_pair_bits, wX_pair_bits}

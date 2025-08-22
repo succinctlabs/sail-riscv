@@ -10,7 +10,7 @@ unit mem_write_callback(const char *type, sbits paddr, uint64_t width,
 unit mem_read_callback(const char *type, sbits paddr, uint64_t width,
                        lbits value);
 unit mem_exception_callback(sbits paddr, uint64_t num_of_exception);
-unit xreg_full_write_callback(const_sail_string abi_name, unsigned reg,
+unit xreg_full_write_callback(const_sail_string abi_name, sbits reg,
                               sbits value);
 unit freg_write_callback(unsigned reg, sbits value);
 // `full` indicates that the name and index of the CSR are provided.
@@ -23,13 +23,6 @@ unit csr_full_read_callback(const_sail_string csr_name, unsigned reg,
 unit vreg_write_callback(unsigned reg, lbits value);
 unit pc_write_callback(sbits value);
 unit trap_callback(unit);
-
-// TODO: Move these implementations to C.
-unit zrvfi_write(sbits paddr, int64_t width, lbits value);
-unit zrvfi_read(sbits paddr, sail_int width, lbits value);
-unit zrvfi_mem_exception(sbits paddr);
-unit zrvfi_wX(int64_t reg, sbits value);
-unit zrvfi_trap(unit);
 
 #ifdef __cplusplus
 }

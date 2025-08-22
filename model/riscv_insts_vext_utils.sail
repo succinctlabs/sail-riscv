@@ -10,14 +10,6 @@
 /* This file implements functions used by vector instructions.                     */
 /* ******************************************************************************* */
 
-/* NFIELDS Encoding
- * typically, nf is in range 1 to 8, but for 'Vector Load/Store Whole Register Instructions',
- * only NFIELDS values of 1, 2, 4, 8 are supported, with other values reserved.
- */
-type nfields_range('q) = 'q > 0 & 'q <= 8
-type nfields_range_pow2('q) = 'q in { 1, 2, 4, 8 }
-type nfields = { 'q, nfields_range('q). int('q) }
-
 /* Vector mask mapping */
 mapping maybe_vmask : string <-> bits(1) = {
   ""              <-> 0b1, /* unmasked by default */
@@ -30,8 +22,7 @@ mapping maybe_vmask : string <-> bits(1) = {
  */
 val valid_eew_emul : (int, int) -> bool
 function valid_eew_emul(EEW, EMUL_pow) = {
-  let ELEN = 2 ^ ELEN_pow;
-  EEW >= 8 & EEW <= ELEN & EMUL_pow >= -3 & EMUL_pow <= 3
+  EEW >= 8 & EEW <= elen & EMUL_pow >= -3 & EMUL_pow <= 3
 }
 
 /* Check for valid vtype setting
@@ -120,6 +111,7 @@ function illegal_vd_unmasked() = {
 /* d. Variable width check for:
  *  1. integer/fixed-point widening/narrowing instructions
  *  2. vector integer extension: vzext, vsext
+ *  3. vector crypto extension: zvbb
  */
 val illegal_variable_width : (vregidx, bits(1), int, int) -> bool
 function illegal_variable_width(vd, vm, SEW_new, LMUL_pow_new) = {
@@ -136,9 +128,9 @@ function illegal_reduction() = {
 }
 
 /* f. Variable width check for widening reduction instructions */
-val illegal_reduction_widen : (int, int) -> bool
-function illegal_reduction_widen(SEW_widen, LMUL_pow_widen) = {
-  not(valid_vtype()) | not(assert_vstart(0)) | not(valid_eew_emul(SEW_widen, LMUL_pow_widen))
+val illegal_widening_reduction : (int) -> bool
+function illegal_widening_reduction(EEW) = {
+  not(valid_vtype()) | not(assert_vstart(0)) | not(EEW >= 8 & EEW <= elen)
 }
 
 /* g. Non-indexed load instruction check */
@@ -187,8 +179,11 @@ function get_velem_quad(v, i) = v[4 * i + 3] @ v[4 * i + 2] @ v[4 * i + 1] @ v[4
 /* Divide the input bitvector into 4 equal slices and store them in vd starting at position 4*i */
 val write_velem_quad : forall 'n, 'n > 0 . (vregidx, sew_bitsize, bits('n), nat) -> unit
 function write_velem_quad(vd, SEW, input, i) = {
-  foreach(j from 0 to 3)
-    write_single_element(SEW, 4 * i + j, vd, slice(input, j * SEW, SEW));
+  foreach(j from 0 to 3) {
+    // TODO: Change the type signature to enforce this assertion.
+    assert((j + 1) * SEW <= 'n);
+    write_single_element(SEW, 4 * i + j, vd, input[(j + 1) * SEW - 1 .. j * SEW]);
+  }
 }
 
 /* Extracts 8 consecutive vector elements starting from index 8*i and returns a
@@ -226,7 +221,7 @@ function get_start_element() = {
    * TODO: the bound here might be incorrect.
    * See https://github.com/riscv/sail-riscv/pull/755#discussion_r2035095825
    */
-  if start_element > (2 ^ (3 + VLEN_pow - SEW_pow) - 1)
+  if start_element > (2 ^ (3 + vlen_exp - SEW_pow) - 1)
   then Err(())
   else Ok(start_element)
 }
@@ -456,13 +451,18 @@ function get_fixed_rounding_incr(vec_elem, shift_amount) = {
   if shift_amount == 0 then 0b0
   else {
     let rounding_mode = vcsr[vxrm];
+    // TODO: Change the type signature to enforce this assertion.
+    assert(shift_amount < 'm);
     match rounding_mode {
-      0b00 => slice(vec_elem, shift_amount - 1, 1),
-      0b01 => bool_to_bits(
-        (slice(vec_elem, shift_amount - 1, 1) == 0b1) & (slice(vec_elem, 0, shift_amount - 1) != zeros() | slice(vec_elem, shift_amount, 1) == 0b1)),
+      0b00 => bit_to_bits(vec_elem[shift_amount - 1]),
+      0b01 => {
+        bool_to_bits(
+          vec_elem[shift_amount - 1] == bitone &
+          ((if shift_amount == 1 then false else vec_elem[shift_amount - 2 .. 0] != zeros()) | vec_elem[shift_amount] == bitone))
+      },
       0b10 => 0b0,
       0b11 => bool_to_bits(
-        not(slice(vec_elem, shift_amount, 1) == 0b1) & (slice(vec_elem, 0, shift_amount) != zeros()))
+        vec_elem[shift_amount] != bitone & vec_elem[shift_amount - 1 .. 0] != zeros())
     }
   }
 }
